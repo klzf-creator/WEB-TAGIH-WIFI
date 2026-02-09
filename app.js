@@ -98,6 +98,9 @@ window.App = {
     const billLabel = document.getElementById("totalBill");
     if (!container) return;
 
+    // Ambil Tanggal Hari Ini (1-31)
+    const todayDate = new Date().getDate();
+
     // 1. GABUNGKAN DATA
     let list = this.state.customers.map((c) => {
       const pay = this.state.payments.find((p) => p.customer_id === c.id);
@@ -107,26 +110,31 @@ window.App = {
       const isLunas = paid >= bill;
       const isPartial = paid > 0 && paid < bill;
 
+      // LOGIKA TELAT BAYAR (OVERDUE)
+      // Hanya berlaku jika: Belum Lunas DAN Hari ini > Tanggal Jatuh Tempo
+      const isLate = !isLunas && todayDate > c.due_date;
+      const lateDays = isLate ? todayDate - c.due_date : 0;
+
       return {
         ...c,
         billAmount: bill,
         paidAmount: paid,
         isLunas,
         isPartial,
+        isLate,
+        lateDays,
         remaining: bill - paid,
         paymentData: pay,
       };
     });
 
-    // 2. SEARCH LOGIC (PRIORITAS TERTINGGI)
-    // Jika ada search query, kita hiraukan filter status (Unpaid/All)
+    // 2. SEARCH LOGIC
     const isSearching = this.state.searchQuery.length > 0;
-
     if (isSearching) {
       const query = this.state.searchQuery.toLowerCase();
       list = list.filter((c) => c.name.toLowerCase().includes(query));
     } else {
-      // 3. FILTER LOGIC (Hanya jika TIDAK sedang searching)
+      // 3. FILTER LOGIC
       if (this.state.filter === "unpaid") {
         list = list.filter((c) => !c.isLunas);
       }
@@ -150,7 +158,7 @@ window.App = {
       container.innerHTML = `
                 <div class="text-center py-12 opacity-50">
                     <div class="text-4xl mb-3">${isSearching ? "🔍" : "🎉"}</div>
-                    <p>${isSearching ? "Tidak ditemukan." : "Semua sudah lunas!"}</p>
+                    <p>${isSearching ? "Tidak ditemukan." : "Semua aman / Lunas!"}</p>
                 </div>`;
       return;
     }
@@ -161,6 +169,7 @@ window.App = {
         let border = "border-red-500";
         let statusBadge = `<span class="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded">BELUM</span>`;
         let nominalInfo = `<span class="text-red-600">Tagihan: ${this.formatRupiah(c.billAmount)}</span>`;
+        let bgCard = "bg-white";
 
         if (c.isLunas) {
           border = "border-green-500";
@@ -172,29 +181,49 @@ window.App = {
           nominalInfo = `<span class="text-yellow-700">Kurang: ${this.formatRupiah(c.remaining)}</span>`;
         }
 
-        // WA Link
+        // TAMPILAN KHUSUS JIKA TELAT
+        let lateBadge = "";
+        if (c.isLate) {
+          // Tambah badge merah gelap "TELAT X HARI"
+          lateBadge = `<div class="mt-1 inline-block bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md animate-pulse">⚠️ TELAT ${c.lateDays} HARI</div>`;
+          // Ubah border jadi lebih tebal/gelap
+          border = "border-red-700 border-l-8";
+          bgCard = "bg-red-50"; // Latar agak merah sedikit biar kolektor sadar
+        }
+
+        // WA Link Logic
         const sisa = c.billAmount - c.paidAmount;
-        const waText = encodeURIComponent(
-          `Halo ${c.name}, tagihan WiFi bulan ini ` +
-            (c.isLunas ? `LUNAS.` : `sisa Rp ${this.formatRupiah(sisa)}.`) +
-            ` Trims.`,
-        );
+        let pesanWA = `Halo ${c.name}, tagihan WiFi bulan ini `;
+
+        if (c.isLunas) {
+          pesanWA += `sudah LUNAS. Terima kasih.`;
+        } else {
+          pesanWA += `masih ada tagihan Rp ${this.formatRupiah(sisa)}. `;
+          if (c.isLate) {
+            pesanWA += `*MOHON MAAF, SUDAH TELAT ${c.lateDays} HARI DARI TANGGAL JATUH TEMPO.* Mohon segera dibayar hari ini.`;
+          } else {
+            pesanWA += `Mohon dicek kembali. Terima kasih.`;
+          }
+        }
+        const waText = encodeURIComponent(pesanWA);
 
         return `
-            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 ${border} flex justify-between items-center">
+            <div class="${bgCard} p-4 rounded-xl shadow-sm border-l-4 ${border} mb-3 flex justify-between items-center relative overflow-hidden transition-all">
                 <div class="flex-1 min-w-0 pr-2">
                     <div class="flex items-center gap-2 mb-1">
-                        <span class="text-[10px] font-bold uppercase text-gray-400 bg-gray-100 px-1.5 rounded">${c.village}</span>
+                        <span class="text-[10px] font-bold uppercase text-gray-500 bg-gray-200 px-1.5 rounded">${c.village}</span>
                         ${statusBadge}
                     </div>
-                    <h3 class="font-bold text-gray-800 text-lg truncate mb-1">${c.name}</h3>
-                    <p class="text-xs font-medium">${nominalInfo}</p>
+                    <h3 class="font-bold text-gray-800 text-lg truncate mb-0 leading-tight">${c.name}</h3>
+                    ${lateBadge} <p class="text-xs font-medium mt-1">${nominalInfo}</p>
                 </div>
                 <div class="flex items-center gap-2">
                     ${
                       !c.isLunas
                         ? `
-                        <a href="https://wa.me/${c.phone}?text=${waText}" target="_blank" class="w-10 h-10 flex items-center justify-center rounded-lg bg-green-50 text-green-600">💬</a>
+                        <a href="https://wa.me/${c.phone}?text=${waText}" target="_blank" class="w-10 h-10 flex items-center justify-center rounded-lg ${c.isLate ? "bg-red-600 text-white hover:bg-red-700 shadow-md" : "bg-green-50 text-green-600"} transition-all">
+                           💬
+                        </a>
                         <button onclick="App.openPaymentModal('${c.id}')" class="w-10 h-10 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600 font-bold text-lg shadow-sm">💰</button>
                     `
                         : `
