@@ -7,14 +7,11 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>TagihWarga</title>
-
     <meta name="theme-color" content="#1e40af" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <link rel="manifest" href="manifest.json" />
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <style>
       * {
         -webkit-tap-highlight-color: transparent;
@@ -44,9 +41,23 @@
           background-position: -200% 0;
         }
       }
+      @keyframes slideUp {
+        from {
+          transform: translateY(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      .modal-slide {
+        animation: slideUp 0.3s ease-out;
+      }
     </style>
   </head>
   <body class="bg-gray-50 min-h-screen pb-28">
+    <!-- ========== HEADER ========== -->
     <header class="bg-blue-800 text-white sticky top-0 z-40 shadow-md">
       <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
         <div>
@@ -69,6 +80,7 @@
       </div>
     </header>
 
+    <!-- ========== MONTH NAVIGATOR ========== -->
     <div class="bg-white border-b sticky top-[60px] z-30 shadow-sm">
       <div class="max-w-md mx-auto px-4 py-2 flex items-center justify-between">
         <button
@@ -93,10 +105,12 @@
       </div>
     </div>
 
+    <!-- ========== MAIN ========== -->
     <main class="max-w-md mx-auto">
+      <!-- Due Date Tabs -->
       <div class="px-4 pt-4">
         <p class="text-xs font-bold text-gray-400 uppercase mb-2">
-          Pilih Tanggal Jatuh Tempo (JT)
+          Pilih Tanggal Jatuh Tempo
         </p>
         <div
           id="dueDateButtons"
@@ -107,13 +121,14 @@
         </div>
       </div>
 
+      <!-- Search -->
       <div class="px-4 pt-4 sticky top-[110px] z-20 bg-gray-50 pb-2">
         <div class="relative">
           <input
             type="text"
             id="searchInput"
             onkeyup="App.handleSearch(this.value)"
-            placeholder="🔍 Cari nama warga..."
+            placeholder="🔍 Cari nama / kode / alamat..."
             class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none shadow-sm text-sm"
           />
           <div
@@ -130,6 +145,7 @@
         </div>
       </div>
 
+      <!-- Filter -->
       <div id="filterTabs" class="px-4 pb-2">
         <div class="flex bg-gray-200 rounded-lg p-1">
           <button
@@ -149,35 +165,42 @@
         </div>
       </div>
 
-      <div id="customerList" class="px-4 space-y-3 min-h-[300px]"></div>
+      <!-- Customer List -->
+      <div id="customerList" class="px-4 min-h-[300px]"></div>
 
+      <!-- Empty State -->
       <div id="emptyState" class="hidden px-4 pt-12 text-center">
         <div class="text-5xl mb-2">📅</div>
         <p class="text-gray-500">Pilih tanggal di atas</p>
       </div>
     </main>
 
+    <!-- ========== FABs ========== -->
     <button
       onclick="App.openAddModal()"
-      class="fixed bottom-24 right-6 bg-green-600 text-white w-14 h-14 rounded-full shadow-xl hover:bg-green-700 active:scale-95 z-40 flex items-center justify-center text-2xl font-bold shadow-green-200"
+      class="fixed bottom-24 right-6 bg-green-600 text-white w-14 h-14 rounded-full shadow-xl hover:bg-green-700 active:scale-95 z-40 flex items-center justify-center text-2xl"
     >
       ➕
     </button>
     <button
       onclick="App.refresh()"
-      class="fixed bottom-6 right-6 bg-blue-600 text-white w-14 h-14 rounded-full shadow-xl hover:bg-blue-700 active:scale-95 z-40 flex items-center justify-center text-2xl font-bold shadow-blue-200"
+      class="fixed bottom-6 right-6 bg-blue-600 text-white w-14 h-14 rounded-full shadow-xl hover:bg-blue-700 active:scale-95 z-40 flex items-center justify-center text-2xl"
     >
       🔄
     </button>
 
+    <!-- ========== PAYMENT MODAL ========== -->
     <div id="paymentModal" class="fixed inset-0 z-[60] hidden">
       <div
         class="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onclick="App.closePaymentModal()"
       ></div>
       <div
-        class="absolute bottom-0 w-full bg-white rounded-t-2xl p-5 animate-[slideUp_0.3s]"
+        class="absolute bottom-0 w-full max-w-md mx-auto left-0 right-0 bg-white rounded-t-2xl p-5 modal-slide"
       >
+        <div class="flex justify-center mb-2">
+          <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
+        </div>
         <h2 class="text-lg font-bold mb-1">Terima Pembayaran</h2>
         <p id="modalCustomerName" class="text-sm text-gray-500 mb-4">-</p>
 
@@ -202,12 +225,12 @@
             <div id="photoPreviewContainer" class="hidden relative mb-2">
               <img
                 id="photoPreview"
-                class="h-32 rounded-lg border object-cover"
+                class="h-32 rounded-lg border object-cover w-full"
               />
               <button
                 type="button"
                 onclick="App.removePhoto()"
-                class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold shadow-lg"
               >
                 ✕
               </button>
@@ -239,48 +262,74 @@
       </div>
     </div>
 
+    <!-- ========== DETAIL MODAL ========== -->
+    <div id="detailModal" class="fixed inset-0 z-[60] hidden">
+      <div
+        class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onclick="App.closeDetailModal()"
+      ></div>
+      <div
+        class="absolute bottom-0 w-full max-w-md mx-auto left-0 right-0 bg-white rounded-t-2xl modal-slide max-h-[85vh] overflow-y-auto"
+      >
+        <div class="flex justify-center pt-3 pb-1">
+          <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
+        </div>
+        <div id="detailContent" class="px-5 pb-6">
+          <!-- Dynamically filled by showDetail() -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== ADD CUSTOMER MODAL ========== -->
     <div id="addModal" class="fixed inset-0 z-[70] hidden">
       <div
         class="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onclick="App.closeAddModal()"
       ></div>
       <div
-        class="absolute bottom-0 w-full bg-white rounded-t-2xl p-5 animate-[slideUp_0.3s] max-h-[90vh] overflow-y-auto"
+        class="absolute bottom-0 w-full max-w-md mx-auto left-0 right-0 bg-white rounded-t-2xl p-5 modal-slide max-h-[90vh] overflow-y-auto"
       >
+        <div class="flex justify-center mb-2">
+          <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
+        </div>
         <h2 class="text-lg font-bold mb-4 text-gray-800">
           👤 Tambah Pelanggan
         </h2>
 
         <form onsubmit="return App.submitNewCustomer(event);">
-          <div class="grid grid-cols-2 gap-4 mb-4">
+          <!-- Row 1: Name -->
+          <div class="mb-3">
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1"
+              >Nama Lengkap *</label
+            >
+            <input
+              type="text"
+              id="addName"
+              required
+              placeholder="Contoh: BUDI SANTOSO"
+              class="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none"
+            />
+          </div>
+
+          <!-- Row 2: Village + Due Date -->
+          <div class="grid grid-cols-3 gap-3 mb-3">
             <div class="col-span-2">
               <label
                 class="block text-xs font-bold text-gray-500 uppercase mb-1"
-                >Nama Lengkap</label
-              >
-              <input
-                type="text"
-                id="addName"
-                required
-                class="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none"
-              />
-            </div>
-            <div>
-              <label
-                class="block text-xs font-bold text-gray-500 uppercase mb-1"
-                >Desa/Lokasi</label
+                >Desa *</label
               >
               <input
                 type="text"
                 id="addVillage"
                 required
+                placeholder="Kloposawit"
                 class="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none"
               />
             </div>
             <div>
               <label
                 class="block text-xs font-bold text-gray-500 uppercase mb-1"
-                >Tgl JT</label
+                >Tgl JT *</label
               >
               <select
                 id="addDueDate"
@@ -290,32 +339,83 @@
             </div>
           </div>
 
-          <div class="mb-4">
+          <!-- Row 3: Customer Code + Package -->
+          <div class="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label
+                class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                >Kode (CP00)</label
+              >
+              <input
+                type="text"
+                id="addCode"
+                placeholder="CP005xxx"
+                class="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none"
+              />
+            </div>
+            <div>
+              <label
+                class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                >Paket</label
+              >
+              <select
+                id="addPackage"
+                class="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none"
+              >
+                <option value="10 Mbps" selected>10 Mbps</option>
+                <option value="15 Mbps">15 Mbps</option>
+                <option value="20 Mbps">20 Mbps</option>
+                <option value="30 Mbps">30 Mbps</option>
+                <option value="50 Mbps">50 Mbps</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Row 4: Address -->
+          <div class="mb-3">
             <label class="block text-xs font-bold text-gray-500 uppercase mb-1"
-              >No HP (628xxx)</label
+              >Alamat Detail</label
             >
             <input
-              type="tel"
-              id="addPhone"
+              type="text"
+              id="addAddress"
+              placeholder="Dsn Krajan RT/RW 001/001"
               class="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none"
             />
           </div>
 
-          <div class="mb-6">
-            <label class="block text-xs font-bold text-gray-500 uppercase mb-1"
-              >Tagihan Bulanan (Rp)</label
-            >
-            <input
-              type="tel"
-              id="addBill"
-              required
-              inputmode="numeric"
-              oninput="App.formatCurrencyInput(this)"
-              value="100.000"
-              class="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none font-bold text-lg"
-            />
+          <!-- Row 5: Phone + Bill -->
+          <div class="grid grid-cols-2 gap-3 mb-5">
+            <div>
+              <label
+                class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                >No HP (628xx)</label
+              >
+              <input
+                type="tel"
+                id="addPhone"
+                placeholder="6281xxx"
+                class="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none"
+              />
+            </div>
+            <div>
+              <label
+                class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                >Tagihan (Rp)</label
+              >
+              <input
+                type="tel"
+                id="addBill"
+                required
+                inputmode="numeric"
+                value="110.000"
+                oninput="App.formatCurrencyInput(this)"
+                class="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none font-bold"
+              />
+            </div>
           </div>
 
+          <!-- Buttons -->
           <div class="flex gap-3">
             <button
               type="button"
@@ -336,10 +436,18 @@
       </div>
     </div>
 
+    <!-- ========== TOAST ========== -->
     <div
       id="toast"
       class="fixed top-5 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-xl text-sm font-bold hidden z-[80]"
     ></div>
+
+    <!-- Service Worker Register -->
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+      }
+    </script>
 
     <script src="app.js"></script>
   </body>
