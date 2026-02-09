@@ -8,74 +8,17 @@
     />
     <title>TagihWarga</title>
 
-    <!-- PWA Meta -->
     <meta name="theme-color" content="#1e40af" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
     <link rel="manifest" href="manifest.json" />
 
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              primary: "#1e40af",
-              "primary-dark": "#1e3a8a",
-            },
-          },
-        },
-      };
-    </script>
-
-    <!-- Supabase JS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-      /* Smooth transitions */
       * {
         -webkit-tap-highlight-color: transparent;
       }
-      .card-enter {
-        animation: slideUp 0.3s ease-out;
-      }
-      @keyframes slideUp {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      .modal-overlay {
-        animation: fadeIn 0.2s ease-out;
-      }
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
-      }
-      .modal-content {
-        animation: slideUpModal 0.3s ease-out;
-      }
-      @keyframes slideUpModal {
-        from {
-          transform: translateY(100%);
-        }
-        to {
-          transform: translateY(0);
-        }
-      }
-      /* Hide scrollbar but allow scroll */
       .hide-scrollbar::-webkit-scrollbar {
         display: none;
       }
@@ -83,7 +26,6 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
       }
-      /* Pulse for loading */
       .skeleton {
         background: linear-gradient(
           90deg,
@@ -104,330 +46,301 @@
       }
     </style>
   </head>
-  <body class="bg-gray-100 min-h-screen">
-    <!-- ========== HEADER ========== -->
-    <header class="bg-primary text-white sticky top-0 z-40 shadow-lg">
-      <div class="max-w-lg mx-auto px-4 py-3">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-xl font-bold tracking-tight">💰 TagihWarga</h1>
-            <p id="headerSubtitle" class="text-blue-200 text-xs mt-0.5">
-              Pilih desa untuk mulai
-            </p>
-          </div>
-          <div class="flex items-center gap-2">
-            <span
-              id="onlineStatus"
-              class="w-2.5 h-2.5 rounded-full bg-green-400"
-              title="Online"
-            ></span>
-            <button
-              id="btnRefresh"
-              onclick="App.refresh()"
-              class="p-2 hover:bg-blue-700 rounded-lg transition-colors"
-              title="Refresh"
-            >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-            </button>
-          </div>
+  <body class="bg-gray-50 min-h-screen pb-28">
+    <header class="bg-blue-800 text-white sticky top-0 z-40 shadow-md">
+      <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
+        <div>
+          <h1 class="font-bold text-lg">💰 TagihWarga</h1>
+          <p id="headerSubtitle" class="text-blue-200 text-xs">
+            Mode Penagihan
+          </p>
+        </div>
+        <div class="text-right">
+          <p class="text-[10px] text-blue-200 uppercase tracking-wide">
+            Setoran Hari Ini
+          </p>
+          <p
+            id="todayTotal"
+            class="font-bold text-lg leading-none text-green-300"
+          >
+            Rp 0
+          </p>
         </div>
       </div>
     </header>
 
-    <!-- ========== MONTH SELECTOR ========== -->
-    <div class="bg-white border-b sticky top-[60px] z-30">
-      <div class="max-w-lg mx-auto px-4 py-2 flex items-center justify-between">
+    <div class="bg-white border-b sticky top-[60px] z-30 shadow-sm">
+      <div class="max-w-md mx-auto px-4 py-2 flex items-center justify-between">
         <button
           onclick="App.changeMonth(-1)"
-          class="p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
+          class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg"
         >
-          <svg
-            class="w-5 h-5 text-gray-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
+          ◀
         </button>
         <button
           id="monthDisplay"
-          onclick="App.showMonthPicker()"
-          class="text-sm font-semibold text-gray-800 px-4 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          onclick="App.refresh()"
+          class="font-bold text-gray-800"
         >
-          Februari 2026
+          ...
         </button>
         <button
           onclick="App.changeMonth(1)"
-          class="p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
+          class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg"
         >
-          <svg
-            class="w-5 h-5 text-gray-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
+          ▶
         </button>
       </div>
     </div>
 
-    <!-- ========== MAIN CONTENT ========== -->
-    <main class="max-w-lg mx-auto pb-24">
-      <!-- Village Selector -->
-      <div id="villageSelector" class="px-4 pt-4">
-        <label
-          class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2"
-          >Pilih Desa</label
-        >
+    <main class="max-w-md mx-auto">
+      <div class="px-4 pt-4">
+        <p class="text-xs font-bold text-gray-400 uppercase mb-2">
+          Pilih Tanggal Jatuh Tempo (JT)
+        </p>
         <div
-          id="villageButtons"
-          class="flex gap-2 overflow-x-auto hide-scrollbar pb-2"
+          id="dueDateButtons"
+          class="flex gap-2 overflow-x-auto hide-scrollbar pb-1"
         >
-          <!-- Dynamically populated -->
+          <div class="skeleton w-20 h-10 rounded-xl"></div>
+          <div class="skeleton w-20 h-10 rounded-xl"></div>
         </div>
       </div>
 
-      <!-- Filter Tabs -->
-      <div id="filterTabs" class="px-4 pt-3 hidden">
-        <div class="flex bg-gray-200 rounded-xl p-1">
+      <div class="px-4 pt-4 sticky top-[110px] z-20 bg-gray-50 pb-2">
+        <div class="relative">
+          <input
+            type="text"
+            id="searchInput"
+            onkeyup="App.handleSearch(this.value)"
+            placeholder="🔍 Cari nama warga..."
+            class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none shadow-sm text-sm"
+          />
+          <div
+            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+          >
+            <span class="text-gray-400 text-lg">🔎</span>
+          </div>
+        </div>
+        <div class="flex justify-between items-center mt-2 px-1">
+          <span id="totalCount" class="text-xs font-bold text-gray-500"
+            >...</span
+          >
+          <span id="totalBill" class="text-xs font-bold text-blue-600"></span>
+        </div>
+      </div>
+
+      <div id="filterTabs" class="px-4 pb-2">
+        <div class="flex bg-gray-200 rounded-lg p-1">
           <button
             id="filterUnpaid"
             onclick="App.setFilter('unpaid')"
-            class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all bg-white text-red-600 shadow-sm"
+            class="flex-1 py-1.5 text-sm font-bold rounded-md bg-white text-red-600 shadow-sm transition-all"
           >
-            🔴 Belum Lunas
+            Belum Lunas
           </button>
           <button
             id="filterAll"
             onclick="App.setFilter('all')"
-            class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all text-gray-500"
+            class="flex-1 py-1.5 text-sm font-bold rounded-md text-gray-500 transition-all"
           >
-            📋 Semua
+            Semua
           </button>
         </div>
       </div>
 
-      <!-- Stats Bar -->
-      <div id="statsBar" class="px-4 pt-3 hidden">
-        <div
-          class="bg-white rounded-xl p-3 flex items-center justify-around shadow-sm"
-        >
-          <div class="text-center">
-            <p class="text-2xl font-bold text-green-600" id="statPaid">0</p>
-            <p class="text-xs text-gray-500">Lunas</p>
-          </div>
-          <div class="w-px h-8 bg-gray-200"></div>
-          <div class="text-center">
-            <p class="text-2xl font-bold text-red-600" id="statUnpaid">0</p>
-            <p class="text-xs text-gray-500">Belum</p>
-          </div>
-          <div class="w-px h-8 bg-gray-200"></div>
-          <div class="text-center">
-            <p class="text-2xl font-bold text-blue-600" id="statTotal">0</p>
-            <p class="text-xs text-gray-500">Total</p>
-          </div>
-        </div>
-      </div>
+      <div id="customerList" class="px-4 space-y-3 min-h-[300px]"></div>
 
-      <!-- Customer List -->
-      <div id="customerList" class="px-4 pt-3 space-y-2">
-        <!-- Skeleton loading -->
-        <div class="skeleton h-20 rounded-xl"></div>
-        <div class="skeleton h-20 rounded-xl"></div>
-        <div class="skeleton h-20 rounded-xl"></div>
-      </div>
-
-      <!-- Empty State -->
       <div id="emptyState" class="hidden px-4 pt-12 text-center">
-        <div class="text-6xl mb-4">🏘️</div>
-        <p class="text-gray-500 text-lg font-medium">
-          Pilih desa terlebih dahulu
-        </p>
-        <p class="text-gray-400 text-sm mt-1">
-          Ketuk salah satu tombol desa di atas
-        </p>
+        <div class="text-5xl mb-2">📅</div>
+        <p class="text-gray-500">Pilih tanggal di atas</p>
       </div>
     </main>
 
-    <!-- ========== PAYMENT MODAL ========== -->
-    <div id="paymentModal" class="fixed inset-0 z-50 hidden">
+    <button
+      onclick="App.openAddModal()"
+      class="fixed bottom-24 right-6 bg-green-600 text-white w-14 h-14 rounded-full shadow-xl hover:bg-green-700 active:scale-95 z-40 flex items-center justify-center text-2xl font-bold shadow-green-200"
+    >
+      ➕
+    </button>
+    <button
+      onclick="App.refresh()"
+      class="fixed bottom-6 right-6 bg-blue-600 text-white w-14 h-14 rounded-full shadow-xl hover:bg-blue-700 active:scale-95 z-40 flex items-center justify-center text-2xl font-bold shadow-blue-200"
+    >
+      🔄
+    </button>
+
+    <div id="paymentModal" class="fixed inset-0 z-[60] hidden">
       <div
-        class="modal-overlay absolute inset-0 bg-black/50"
+        class="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onclick="App.closePaymentModal()"
       ></div>
       <div
-        class="modal-content absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-w-lg mx-auto max-h-[90vh] overflow-y-auto"
+        class="absolute bottom-0 w-full bg-white rounded-t-2xl p-5 animate-[slideUp_0.3s]"
       >
-        <!-- Handle bar -->
-        <div class="flex justify-center pt-3 pb-1">
-          <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
-        </div>
+        <h2 class="text-lg font-bold mb-1">Terima Pembayaran</h2>
+        <p id="modalCustomerName" class="text-sm text-gray-500 mb-4">-</p>
 
-        <div class="px-5 pb-6">
-          <h2 class="text-lg font-bold text-gray-800 mb-1">Catat Pembayaran</h2>
-          <p id="modalCustomerName" class="text-sm text-gray-500 mb-4">-</p>
+        <form onsubmit="return App.submitPayment(event);">
+          <input type="hidden" id="payCustomerId" />
 
-          <form id="paymentForm" onsubmit="return App.submitPayment(event);">
-            <input type="hidden" id="payCustomerId" />
+          <div class="mb-4">
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1"
+              >Uang Diterima (Rp)</label
+            >
+            <input
+              type="tel"
+              id="payAmount"
+              required
+              inputmode="numeric"
+              oninput="App.formatCurrencyInput(this)"
+              class="w-full text-2xl font-bold p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:outline-none text-gray-800"
+            />
+          </div>
 
-            <!-- Amount -->
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >Jumlah Bayar (Rp)</label
-              >
-              <input
-                type="number"
-                id="payAmount"
-                required
-                min="1"
-                placeholder="Contoh: 50000"
-                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-lg font-semibold focus:border-blue-500 focus:outline-none transition-colors"
+          <div class="mb-4">
+            <div id="photoPreviewContainer" class="hidden relative mb-2">
+              <img
+                id="photoPreview"
+                class="h-32 rounded-lg border object-cover"
               />
-            </div>
-
-            <!-- Photo Upload -->
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >Bukti Bayar (Foto)</label
+              <button
+                type="button"
+                onclick="App.removePhoto()"
+                class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
               >
-              <div id="photoPreviewContainer" class="hidden mb-2">
-                <div class="relative inline-block">
-                  <img
-                    id="photoPreview"
-                    class="w-full max-h-48 object-cover rounded-xl border-2 border-green-400"
-                    alt="Preview"
-                  />
-                  <button
-                    type="button"
-                    onclick="App.removePhoto()"
-                    class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold shadow-lg"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
+                ✕
+              </button>
+            </div>
+            <label
+              id="photoUploadBtn"
+              class="block w-full py-3 border-2 border-dashed rounded-xl text-center text-gray-400 active:bg-gray-50 cursor-pointer"
+            >
+              📷 Foto Bukti (Opsional)
+              <input
+                type="file"
+                id="payPhoto"
+                accept="image/*"
+                capture="environment"
+                class="hidden"
+                onchange="App.previewPhoto(event)"
+              />
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            id="btnSubmit"
+            class="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-lg shadow-lg shadow-green-200 disabled:opacity-50 transition-all"
+          >
+            ✅ Simpan Pembayaran
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div id="addModal" class="fixed inset-0 z-[70] hidden">
+      <div
+        class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onclick="App.closeAddModal()"
+      ></div>
+      <div
+        class="absolute bottom-0 w-full bg-white rounded-t-2xl p-5 animate-[slideUp_0.3s] max-h-[90vh] overflow-y-auto"
+      >
+        <h2 class="text-lg font-bold mb-4 text-gray-800">
+          👤 Tambah Pelanggan
+        </h2>
+
+        <form onsubmit="return App.submitNewCustomer(event);">
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="col-span-2">
               <label
-                id="photoUploadBtn"
-                class="flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 cursor-pointer hover:border-blue-400 hover:text-blue-500 transition-colors active:bg-blue-50"
-              >
-                <svg
-                  class="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                <span class="font-medium text-sm"
-                  >Ambil Foto / Pilih Gambar</span
-                >
-                <input
-                  type="file"
-                  id="payPhoto"
-                  accept="image/*"
-                  capture="environment"
-                  class="hidden"
-                  onchange="App.previewPhoto(event)"
-                />
-              </label>
-            </div>
-
-            <!-- Notes -->
-            <div class="mb-5">
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >Catatan (opsional)</label
+                class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                >Nama Lengkap</label
               >
               <input
                 type="text"
-                id="payNotes"
-                placeholder="Contoh: Bayar lewat transfer"
-                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors"
+                id="addName"
+                required
+                class="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none"
               />
             </div>
+            <div>
+              <label
+                class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                >Desa/Lokasi</label
+              >
+              <input
+                type="text"
+                id="addVillage"
+                required
+                class="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none"
+              />
+            </div>
+            <div>
+              <label
+                class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                >Tgl JT</label
+              >
+              <select
+                id="addDueDate"
+                required
+                class="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none"
+              ></select>
+            </div>
+          </div>
 
-            <!-- Submit -->
+          <div class="mb-4">
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1"
+              >No HP (628xxx)</label
+            >
+            <input
+              type="tel"
+              id="addPhone"
+              class="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none"
+            />
+          </div>
+
+          <div class="mb-6">
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1"
+              >Tagihan Bulanan (Rp)</label
+            >
+            <input
+              type="tel"
+              id="addBill"
+              required
+              inputmode="numeric"
+              oninput="App.formatCurrencyInput(this)"
+              value="100.000"
+              class="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none font-bold text-lg"
+            />
+          </div>
+
+          <div class="flex gap-3">
+            <button
+              type="button"
+              onclick="App.closeAddModal()"
+              class="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl"
+            >
+              Batal
+            </button>
             <button
               type="submit"
-              id="btnSubmitPayment"
-              class="w-full py-3.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold rounded-xl text-lg transition-colors shadow-lg shadow-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              id="btnAddSubmit"
+              class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200"
             >
-              ✅ Simpan Pembayaran
+              Simpan
             </button>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
     </div>
 
-    <!-- ========== DETAIL MODAL ========== -->
-    <div id="detailModal" class="fixed inset-0 z-50 hidden">
-      <div
-        class="modal-overlay absolute inset-0 bg-black/50"
-        onclick="App.closeDetailModal()"
-      ></div>
-      <div
-        class="modal-content absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-w-lg mx-auto max-h-[85vh] overflow-y-auto"
-      >
-        <div class="flex justify-center pt-3 pb-1">
-          <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
-        </div>
-        <div id="detailContent" class="px-5 pb-6">
-          <!-- Filled dynamically -->
-        </div>
-      </div>
-    </div>
-
-    <!-- ========== TOAST ========== -->
     <div
       id="toast"
-      class="fixed top-20 left-1/2 -translate-x-1/2 z-[60] hidden"
-    >
-      <div
-        class="bg-gray-800 text-white px-5 py-3 rounded-xl shadow-2xl text-sm font-medium max-w-xs text-center"
-      >
-        <span id="toastMessage">Berhasil!</span>
-      </div>
-    </div>
+      class="fixed top-5 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-xl text-sm font-bold hidden z-[80]"
+    ></div>
 
     <script src="app.js"></script>
-    <script>
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("/sw.js");
-      }
-    </script>
   </body>
 </html>
