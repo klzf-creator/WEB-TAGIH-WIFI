@@ -98,10 +98,15 @@ window.App = {
     const billLabel = document.getElementById("totalBill");
     if (!container) return;
 
-    // Ambil Tanggal Hari Ini (1-31)
-    const todayDate = new Date().getDate();
+    // 1. Tentukan Tanggal Hari Ini (Tanpa Jam/Menit agar akurat)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    // 1. GABUNGKAN DATA
+    // 2. Ambil Info Bulan & Tahun yang Sedang Dilihat di Layar
+    const viewYear = this.state.selectedMonth.getFullYear();
+    const viewMonth = this.state.selectedMonth.getMonth();
+
+    // --- MULAI LOOPING DATA WARGA ---
     let list = this.state.customers.map((c) => {
       const pay = this.state.payments.find((p) => p.customer_id === c.id);
       const bill = c.bill_amount || 100000;
@@ -110,10 +115,28 @@ window.App = {
       const isLunas = paid >= bill;
       const isPartial = paid > 0 && paid < bill;
 
-      // LOGIKA TELAT BAYAR (OVERDUE)
-      // Hanya berlaku jika: Belum Lunas DAN Hari ini > Tanggal Jatuh Tempo
-      const isLate = !isLunas && todayDate > c.due_date;
-      const lateDays = isLate ? todayDate - c.due_date : 0;
+      // === LOGIKA BARU: HITUNG TELAT YANG BENAR ===
+      let isLate = false;
+      let lateDays = 0;
+
+      if (!isLunas) {
+        // Buat Tanggal Jatuh Tempo Sebenarnya berdasarkan Bulan yang dipilih
+        // Contoh: Sedang lihat Februari 2026, Tgl JT 10 -> Jadi 10 Feb 2026
+        const dueDateObj = new Date(viewYear, viewMonth, c.due_date);
+
+        // Hitung selisih waktu (milidetik) antara Hari Ini vs Tanggal JT
+        const diffTime = today - dueDateObj;
+
+        // Ubah ke hari (Membulatkan ke atas)
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        // Jika diffDays positif, berarti hari ini sudah MELEWATI tanggal JT
+        if (diffDays > 0) {
+          isLate = true;
+          lateDays = diffDays;
+        }
+        // Jika diffDays negatif/0 (misal lihat bulan depan), maka TIDAK TELAT
+      }
 
       return {
         ...c,
@@ -128,13 +151,13 @@ window.App = {
       };
     });
 
-    // 2. SEARCH LOGIC
+    // 3. SEARCH LOGIC
     const isSearching = this.state.searchQuery.length > 0;
     if (isSearching) {
       const query = this.state.searchQuery.toLowerCase();
       list = list.filter((c) => c.name.toLowerCase().includes(query));
     } else {
-      // 3. FILTER LOGIC
+      // FILTER LOGIC
       if (this.state.filter === "unpaid") {
         list = list.filter((c) => !c.isLunas);
       }
@@ -184,11 +207,11 @@ window.App = {
         // TAMPILAN KHUSUS JIKA TELAT
         let lateBadge = "";
         if (c.isLate) {
-          // Tambah badge merah gelap "TELAT X HARI"
+          // Tampilkan jumlah hari telat sebenarnya
+          // Jika telat > 30 hari (bulan lalu), angkanya akan besar (misal: Telat 45 Hari)
           lateBadge = `<div class="mt-1 inline-block bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md animate-pulse">⚠️ TELAT ${c.lateDays} HARI</div>`;
-          // Ubah border jadi lebih tebal/gelap
           border = "border-red-700 border-l-8";
-          bgCard = "bg-red-50"; // Latar agak merah sedikit biar kolektor sadar
+          bgCard = "bg-red-50";
         }
 
         // WA Link Logic
@@ -200,7 +223,7 @@ window.App = {
         } else {
           pesanWA += `masih ada tagihan Rp ${this.formatRupiah(sisa)}. `;
           if (c.isLate) {
-            pesanWA += `*MOHON MAAF, SUDAH TELAT ${c.lateDays} HARI DARI TANGGAL JATUH TEMPO.* Mohon segera dibayar hari ini.`;
+            pesanWA += `*MOHON MAAF, SUDAH TELAT ${c.lateDays} HARI.* Mohon segera dibayar hari ini.`;
           } else {
             pesanWA += `Mohon dicek kembali. Terima kasih.`;
           }
@@ -215,7 +238,8 @@ window.App = {
                         ${statusBadge}
                     </div>
                     <h3 class="font-bold text-gray-800 text-lg truncate mb-0 leading-tight">${c.name}</h3>
-                    ${lateBadge} <p class="text-xs font-medium mt-1">${nominalInfo}</p>
+                    ${lateBadge}
+                    <p class="text-xs font-medium mt-1">${nominalInfo}</p>
                 </div>
                 <div class="flex items-center gap-2">
                     ${
