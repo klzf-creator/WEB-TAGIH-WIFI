@@ -1,0 +1,18 @@
+RewriteEngine On
+
+# --- BAGIAN 1: PAKSA HTTPS (Supaya ada Gembok) ---
+# Jika pengunjung datang lewat jalur biasa (HTTP)
+RewriteCond %{HTTPS} off
+# Paksa pindah ke jalur aman (HTTPS)
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# --- BAGIAN 2: HILANGKAN .html (Supaya URL Cantik) ---
+
+# Jika ada yang mengetik alamat pakai .html, buang .html-nya
+RewriteCond %{THE_REQUEST} \s/+(.+?)\.html[\s?] [NC]
+RewriteRule ^ /%1 [R=301,L]
+
+# Jika ada yang mengetik alamat bersih, ambilkan file aslinya secara diam-diam
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^(.+)$ $1.html [L,QSA]
