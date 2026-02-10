@@ -339,9 +339,26 @@ window.App = {
         ${proofHtml}
       </div>
 
-      <div class="flex gap-2">
-        ${pay ? `<button onclick="App.deletePayment('${pay.id}','${c.id}')" class="flex-1 py-2.5 bg-red-50 text-red-600 font-bold rounded-xl text-sm">🗑️ Hapus Bayar</button>` : ""}
-        <button onclick="App.closeDetailModal()" class="flex-1 py-2.5 bg-gray-100 text-gray-600 font-bold rounded-xl text-sm">Tutup</button>
+      <div class="flex gap-2 mb-2">
+  ${
+    pay
+      ? `
+    <button onclick="App.deletePayment('${pay.id}','${c.id}')" 
+      class="flex-1 py-2.5 bg-red-50 text-red-600 font-bold rounded-xl text-sm hover:bg-red-100">
+      🗑️ Hapus Bayar
+    </button>
+  `
+      : ""
+  }
+  <button onclick="App.toggleEditMode('${c.id}')" 
+    class="flex-1 py-2.5 bg-yellow-50 text-yellow-700 font-bold rounded-xl text-sm hover:bg-yellow-100">
+    ✏️ Edit Data
+  </button>
+</div>
+<button onclick="App.closeDetailModal()" 
+  class="w-full py-2.5 bg-gray-100 text-gray-600 font-bold rounded-xl text-sm">
+  Tutup
+</button>
       </div>
     `;
 
@@ -361,6 +378,218 @@ window.App = {
       this.closeDetailModal();
       await this.loadCustomersByDate(this.state.selectedDate);
       this.calculateTodayIncome();
+    } catch (err) {
+      alert("Gagal hapus: " + err.message);
+    }
+  },
+
+  // ============================================
+  // TAMBAHAN FUNGSI EDIT CUSTOMER
+  // Letakkan setelah fungsi showDetail()
+  // ============================================
+
+  // Fungsi untuk toggle mode Edit di Detail Modal
+  toggleEditMode(customerId) {
+    const pin = prompt("Masukkan PIN Admin:");
+    if (pin !== "1234") {
+      // Ganti dengan PIN kamu
+      this.showToast("❌ PIN salah");
+      return;
+    }
+    const c = this.state.customers.find((x) => x.id === customerId);
+    if (!c) return;
+
+    const content = document.getElementById("detailContent");
+    const pay = this.state.payments.find((p) => p.customer_id === customerId);
+    const bill = c.bill_amount || 110000;
+
+    content.innerHTML = `
+    <h2 class="text-lg font-bold text-gray-800 mb-4">✏️ Edit Data Customer</h2>
+    <form onsubmit="return App.submitEditCustomer(event, '${customerId}')">
+      <!-- Nama -->
+      <div class="mb-3">
+        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nama Lengkap</label>
+        <input type="text" id="editName" value="${this.escapeHtml(c.name)}" required
+          class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:border-blue-500 outline-none text-sm" />
+      </div>
+
+      <!-- Desa + JT -->
+      <div class="grid grid-cols-3 gap-2 mb-3">
+        <div class="col-span-2">
+          <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Desa</label>
+          <input type="text" id="editVillage" value="${this.escapeHtml(c.village)}" required
+            class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:border-blue-500 outline-none text-sm" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Tgl JT</label>
+          <select id="editDueDate" required
+            class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:border-blue-500 outline-none text-sm">
+            ${Array.from({ length: 31 }, (_, i) => i + 1)
+              .map(
+                (d) =>
+                  `<option value="${d}" ${c.due_date === d ? "selected" : ""}>${d}</option>`,
+              )
+              .join("")}
+          </select>
+        </div>
+      </div>
+
+      <!-- Kode + Paket -->
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <div>
+          <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Kode (CP00)</label>
+          <input type="text" id="editCode" value="${c.customer_code || ""}"
+            class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:border-blue-500 outline-none text-sm" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Paket</label>
+          <select id="editPackage"
+            class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:border-blue-500 outline-none text-sm">
+            ${["10 Mbps", "15 Mbps", "20 Mbps", "30 Mbps", "50 Mbps"]
+              .map(
+                (p) =>
+                  `<option value="${p}" ${c.package === p ? "selected" : ""}>${p}</option>`,
+              )
+              .join("")}
+          </select>
+        </div>
+      </div>
+
+      <!-- Alamat -->
+      <div class="mb-3">
+        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Alamat Detail</label>
+        <input type="text" id="editAddress" value="${c.address || ""}"
+          class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:border-blue-500 outline-none text-sm" />
+      </div>
+
+      <!-- HP + Tagihan -->
+      <div class="grid grid-cols-2 gap-2 mb-4">
+        <div>
+          <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">No HP</label>
+          <input type="tel" id="editPhone" value="${c.phone || ""}"
+            class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:border-blue-500 outline-none text-sm" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Tagihan (Rp)</label>
+          <input type="tel" id="editBill" value="${bill.toLocaleString("id-ID")}" required inputmode="numeric"
+            oninput="App.formatCurrencyInput(this)"
+            class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white focus:border-blue-500 outline-none text-sm font-bold" />
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex gap-2">
+        <button type="button" onclick="App.showDetail('${customerId}')"
+          class="flex-1 py-2.5 bg-gray-100 text-gray-600 font-bold rounded-xl text-sm">Batal</button>
+        <button type="submit" id="btnEditSubmit"
+          class="flex-1 py-2.5 bg-blue-600 text-white font-bold rounded-xl text-sm shadow-lg shadow-blue-200">💾 Simpan</button>
+      </div>
+
+      ${
+        pay
+          ? ""
+          : `
+        <button type="button" onclick="App.deleteCustomer('${customerId}')"
+          class="w-full mt-2 py-2 bg-red-50 text-red-600 font-bold rounded-xl text-xs hover:bg-red-100">
+          🗑️ Hapus Customer
+        </button>
+      `
+      }
+    </form>
+  `;
+  },
+
+  // Submit Edit Customer
+  async submitEditCustomer(e, customerId) {
+    e.preventDefault();
+    const btn = document.getElementById("btnEditSubmit");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "⏳ Menyimpan...";
+    }
+
+    try {
+      const payload = {
+        name: document.getElementById("editName").value.trim(),
+        village: document.getElementById("editVillage").value.trim(),
+        due_date: parseInt(document.getElementById("editDueDate").value),
+        customer_code: document.getElementById("editCode").value.trim() || null,
+        package: document.getElementById("editPackage").value.trim() || null,
+        address: document.getElementById("editAddress").value.trim() || null,
+        phone: document.getElementById("editPhone").value.trim() || null,
+        bill_amount: parseInt(
+          document.getElementById("editBill").value.replace(/\./g, ""),
+        ),
+      };
+
+      if (!payload.name || !payload.village || !payload.due_date) {
+        throw new Error("Nama, Desa, dan Tgl JT wajib diisi");
+      }
+
+      const { error } = await db
+        .from("customers")
+        .update(payload)
+        .eq("id", customerId);
+      if (error) throw error;
+
+      this.showToast("✅ Data customer diperbarui!");
+
+      // Reload data
+      await this.loadInitialDates();
+      if (this.state.selectedDate) {
+        await this.loadCustomersByDate(this.state.selectedDate);
+      }
+
+      // Kembali ke detail view (bukan tutup modal)
+      this.showDetail(customerId);
+    } catch (err) {
+      alert("Gagal update: " + err.message);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "💾 Simpan";
+      }
+    }
+  },
+
+  // Delete Customer
+  async deleteCustomer(customerId) {
+    const pin = prompt("Masukkan PIN Admin:");
+    if (pin !== "1234") {
+      // Ganti dengan PIN kamu
+      this.showToast("❌ PIN salah");
+      return;
+    }
+    const c = this.state.customers.find((x) => x.id === customerId);
+    if (!c) return;
+
+    const confirmation = prompt(
+      `⚠️ BAHAYA! Ketik nama customer untuk konfirmasi hapus:\n\n"${c.name}"`,
+    );
+
+    if (confirmation !== c.name) {
+      this.showToast("❌ Nama tidak cocok, batal hapus");
+      return;
+    }
+
+    try {
+      // Hapus payments dulu (karena ada foreign key)
+      await db.from("payments").delete().eq("customer_id", customerId);
+
+      // Lalu hapus customer
+      const { error } = await db
+        .from("customers")
+        .delete()
+        .eq("id", customerId);
+      if (error) throw error;
+
+      this.showToast("🗑️ Customer dihapus");
+      this.closeDetailModal();
+
+      // Reload
+      await this.loadInitialDates();
+      if (this.state.selectedDate) {
+        await this.loadCustomersByDate(this.state.selectedDate);
+      }
     } catch (err) {
       alert("Gagal hapus: " + err.message);
     }
